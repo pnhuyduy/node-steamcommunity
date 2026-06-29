@@ -57,6 +57,11 @@ SteamCommunity.prototype.httpRequest = function(uri, options, callback, source) 
 			return;
 		}
 
+		if (self._httpProxyAgent && !options.agent) {
+			var targetUrl = String(options.url || options.uri || '');
+			options.agent = /^https:/i.test(targetUrl) ? self._httpsProxyAgent : self._httpProxyAgent;
+		}
+
 		self.request(options, function (err, response, body) {
 			var hasCallback = !!callback;
 			var httpError = options.checkHttpError !== false && self._checkHttpError(err, response, callback, body);

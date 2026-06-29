@@ -43,6 +43,19 @@ function SteamCommunity(options) {
 		defaults.localAddress = options.localAddress;
 	}
 
+	if (options.proxy) {
+		var proxyUrl = options.proxy;
+		var proxyProtocol = new URL(proxyUrl).protocol.replace(':', '');
+		if (/^socks/.test(proxyProtocol)) {
+			var socksAgent = new (require('socks-proxy-agent').SocksProxyAgent)(proxyUrl);
+			this._httpProxyAgent = socksAgent;
+			this._httpsProxyAgent = socksAgent;
+		} else {
+			this._httpProxyAgent = new (require('http-proxy-agent').HttpProxyAgent)(proxyUrl);
+			this._httpsProxyAgent = new (require('https-proxy-agent').HttpsProxyAgent)(proxyUrl);
+		}
+	}
+
 	this.request = options.request || Request.defaults({"forever": true}); // "forever" indicates that we want a keep-alive agent
 	this.request = this.request.defaults(defaults);
 

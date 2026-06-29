@@ -33,20 +33,31 @@ SteamCommunity.prototype._modernLogin = function(logOnDetails) {
 		}
 
 		if (this._options.request) {
-			return reject(new Error('SteamCommunity.login() is incompatible with node-steamcommunity v3\'s usage of \'request\'. If you need to specify a custom \'request\' instance (e.g. when using a proxy), use https://www.npmjs.com/package/steam-session directly to log onto Steam.'));
+			return reject(new Error('SteamCommunity.login() is incompatible with node-steamcommunity v3\'s usage of \'request\'. If you need proxy support during login, use the \'proxy\' option instead of providing a custom \'request\' instance.'));
 		}
 
 		// Import this here so we don't cause problems on old Node versions if this code path isn't taken.
 		const {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} = require('steam-session');
 
+		let sessionOptions = {
+			localAddress: this._options.localAddress,
+			userAgent: this._options.userAgent || chrome()
+		};
+
+		if (this._options.proxy) {
+			let proxyProtocol = new URL(this._options.proxy).protocol.replace(':', '');
+			if (/^socks/.test(proxyProtocol)) {
+				sessionOptions.socksProxy = this._options.proxy;
+			} else {
+				sessionOptions.httpProxy = this._options.proxy;
+			}
+		}
+
 		let session = new LoginSession(
 			logOnDetails.disableMobile
 				? EAuthTokenPlatformType.WebBrowser
 				: EAuthTokenPlatformType.MobileApp,
-			{
-				localAddress: this._options.localAddress,
-				userAgent: this._options.userAgent || chrome()
-			}
+			sessionOptions
 		);
 
 		session.on('authenticated', async () => {
